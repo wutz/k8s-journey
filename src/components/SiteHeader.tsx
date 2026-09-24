@@ -14,6 +14,9 @@ export function SiteHeader() {
             <Link to="/learn" className={navLink} activeProps={{ className: 'text-ink' }}>
               学习路线
             </Link>
+            <Link to="/animation" className={navLink} activeProps={{ className: 'text-ink' }}>
+              动画速览
+            </Link>
             <a href="https://kubernetes.io/zh-cn/docs/home/" target="_blank" rel="noreferrer" className={navLink}>
               官方文档
             </a>

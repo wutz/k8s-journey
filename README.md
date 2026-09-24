@@ -43,6 +43,16 @@ pnpm run deploy
 - 正文：`src/content/lessons/<stage-id>/<slug>.md`
 - 写作规范、提示框语法与内容来源要求见 [CONTENT_GUIDE.md](./CONTENT_GUIDE.md)
 
+## 动画速览
+
+`/animation` 页面嵌入了一部约 3 分钟、带中文旁白的动画，按六个阶段串起整条学习路线，并把每一章对应到相关课文。
+
+- 播放器：`public/animation/player.html`，单文件，无外部依赖。画面用 Canvas 实时绘制，背景音乐和音效由 Web Audio 实时合成，旁白音频以 base64 内嵌。可以单独访问 `/animation/player.html`（线上会 307 跳转到 `/animation/player`）
+- 快捷键：点击画面 / 空格暂停，`←` `→` 快退快进，`M` 静音，`V` 开关旁白，`F` 全屏；起始页的「播放并导出视频」可以录制成视频文件（MP4 或 WebM，取决于浏览器），仅在独立页面显示
+- 自检：打开 `/animation/player.html?scan=1`，逐帧渲染并离线合成全部音频，页面 `data-scan` 为 `OK` 表示没有问题；`?t=秒数&still=1` 可以停在某一帧
+- 封面图：`public/animation/poster.jpg`，首页和分享卡片使用
+- 重新生成旁白（改文案或换声音）：编辑 `scripts/animation/gen_vo.py` 中的文案列表后运行 `python3 scripts/animation/gen_vo.py`（需要 [uv](https://docs.astral.sh/uv/) 和 macOS 的 `afinfo`），脚本会写回播放器里的 `VO_DATA`
+
 ## 说明
 
 Kubernetes® 是 The Linux Foundation 的注册商标。本项目为社区学习资料，与 CNCF 无隶属关系。
