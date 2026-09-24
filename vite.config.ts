@@ -11,7 +11,8 @@ export default defineConfig({
     tailwindcss(),
     tanstackStart({
       // 所有课程页面在构建期预渲染为静态 HTML，Worker 只负责兜底和客户端导航时的数据请求
-      prerender: { enabled: true, crawlLinks: true },
+      // public/animation/ 下是现成的静态播放器，不参与爬取预渲染
+      prerender: { enabled: true, crawlLinks: true, filter: ({ path }) => !path.startsWith('/animation/') },
     }),
     react(),
   ],
