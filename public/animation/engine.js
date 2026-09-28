@@ -385,6 +385,10 @@ function lessonOutro(o={}){
 /* ---------- 注册与时间轴 ---------- */
 let ANIM_DEF=null,SCENES=[],TOTAL=0,VO=[],CUES=[],VO_DATA=[];
 function ANIM(def){ANIM_DEF=def;SCENES=def.scenes;let acc=0;for(const s of SCENES){s.start=acc;acc+=s.dur}TOTAL=acc}
+// 连播时在同一页面里加载下一部：scenes.js 放进函数作用域执行（各文件顶层的同名 const 不会冲突），只取出定义、不切换当前动画
+function compileAnim(code,id){const keep=[ANIM_DEF,SCENES,TOTAL];ANIM_DEF=null;
+  try{new Function(`${code}\n//# sourceURL=/animation/${id}/scenes.js`)();if(!ANIM_DEF)throw new Error('ANIM() not called in '+id);return ANIM_DEF}
+  finally{[ANIM_DEF,SCENES,TOTAL]=keep}}
 // 场景中声明的旁白：scene.vo = [[场景内开始秒数, 字幕文案, 读法覆盖?], ...]
 function voLines(){const L=[];SCENES.forEach((S,s)=>(S.vo||[]).forEach(([a,text,spoken])=>L.push({s,a,text,spoken})));return L}
 function buildTimeline(data){
@@ -449,12 +453,25 @@ function initAudio(){
   noiseBuf=AC.createBuffer(1,AC.sampleRate*2,AC.sampleRate);const nd=noiseBuf.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
   decodeVO();
 }
-let voBufs=[],voOn=true,voRaw=[];
-function fetchVO(base){ // 页面加载时就开始下载旁白音频
-  voRaw=VO_DATA.map(v=>fetch(`${base}/vo/${v.f}`).then(r=>{if(!r.ok)throw new Error(v.f+' '+r.status);return r.arrayBuffer()}));
+let voBufs=[],voOn=true,voRaw=[],voGen=0;
+function fetchVO(base,data=VO_DATA){ // 页面加载时就开始下载旁白音频
+  return data.map(v=>fetch(`${base}/vo/${v.f}`).then(r=>{if(!r.ok)throw new Error(v.f+' '+r.status);return r.arrayBuffer()}));
 }
-function decodeVO(){ // 异步解码；未解码完成的句子在调度时稍后重试
-  return Promise.all(voRaw.map((p,i)=>p.then(buf=>new Promise((res,rej)=>AC.decodeAudioData(buf.slice(0),b=>{voBufs[i]=b;res(b)},rej)))));
+// 连播：提前下载下一部的场景与旁白，activate 时再切换过去
+async function prepareAnim(id,def){
+  const base=`/animation/${id}`;
+  const [code,data]=await Promise.all([def?null:fetch(`${base}/scenes.js`).then(r=>{if(!r.ok)throw new Error(id+' '+r.status);return r.text()}),
+    fetch(`${base}/vo.json`).then(r=>r.ok?r.json():[]).catch(()=>[])]);
+  def=def||compileAnim(code,id);
+  return {id,def,data,raw:fetchVO(base,data)};
+}
+function activate(A){
+  ANIM_DEF=A.def;SCENES=A.def.scenes;TOTAL=SCENES.reduce((n,s)=>n+s.dur,0);
+  buildTimeline(A.data);voGen++;voBufs=[];voRaw=A.raw;if(AC)decodeVO();
+}
+function decodeVO(){ // 异步解码；未解码完成的句子在调度时稍后重试。连播切换后旧动画的解码结果丢弃
+  const g=voGen;
+  return Promise.all(voRaw.map((p,i)=>p.then(buf=>new Promise((res,rej)=>AC.decodeAudioData(buf.slice(0),b=>{if(g===voGen)voBufs[i]=b;res(b)},rej)))));
 }
 function newSession(){ // 每次播放/跳转建立新的总线，暂停时整体淡出切断
   if(session)endSession(session);
@@ -553,7 +570,7 @@ let cv,ppBtn,fill,timeEl,track,bar,flashEl,flashReady=false,muteBtn,voBtn,startE
 // anchorA 对应 T0：now() = T0 + (AC.currentTime - anchorA)
 function now(){if(!playing)return T0;return AC?T0+(AC.currentTime-anchorA):T0+(performance.now()-anchorP)/1000}
 function play(){
-  if(playing)return;if(T0>=TOTAL-.05)T0=0;
+  if(playing)return;if(upTimer)cancelNext();if(T0>=TOTAL-.05)T0=0;
   playing=true;
   if(AC){if(AC.state==='suspended')AC.resume();anchorA=AC.currentTime+.06;newSession();
     nextStep=Math.ceil(T0/STEP);nextCue=CUES.findIndex(c=>c.t>=T0);if(nextCue<0)nextCue=CUES.length;
@@ -578,7 +595,7 @@ function schedule(){
 }
 function frame(){
   let T=now();
-  if(playing&&T>=TOTAL){T=TOTAL;pause();T0=TOTAL;if(recorder)setTimeout(stopRec,1200)}
+  if(playing&&T>=TOTAL){T=TOTAL;pause();T0=TOTAL;if(recorder)setTimeout(stopRec,1200);else onEnded()}
   render(Math.min(T,TOTAL-.001));
   fill.style.width=(T/TOTAL*100)+'%';
   timeEl.textContent=`${fmt(T)} / ${fmt(TOTAL)}`;
@@ -624,11 +641,35 @@ function scan(base){
     .then(()=>errs);
 }
 
-async function boot(id){
-  const base=`/animation/${id}`;
-  cv=document.getElementById('c');ctx=cv.getContext('2d');
-  try{const r=await fetch(`${base}/vo.json`);if(r.ok)VO_DATA=await r.json()}catch(e){}
-  buildTimeline(VO_DATA);fetchVO(base);
+/* ---------- 连播：按 playlist.json 的顺序，一部结束后倒计时自动接下一部 ---------- */
+let PLAYLIST=[],CUR=null,upNext=null,upTimer=null,autoNext=true,nextBtn,prevBtn,autoBtn,nextEl,homeEl;
+const listPos=()=>PLAYLIST.findIndex(a=>a.id===CUR);
+const neighbor=d=>PLAYLIST[listPos()+d]||null;
+let preload=null; // {id, promise}
+function preloadAnim(id){if(!preload||preload.id!==id)preload={id,promise:prepareAnim(id)};preload.promise.catch(()=>{if(preload&&preload.id===id)preload=null});return preload.promise}
+function onEnded(){
+  const nx=neighbor(1);if(!autoNext||!nx)return;
+  let left=5;const cnt=nextEl.querySelector('#nextCount');
+  nextEl.querySelector('#nextTitle').textContent=nx.title;
+  nextEl.querySelector('#nextEyebrow').textContent=nx.stage!=null?`接下来 · STAGE ${STAGES[nx.stage].no} · 第 ${nx.lesson} 课`:'接下来';
+  cnt.textContent=left;nextEl.style.display='flex';preloadAnim(nx.id);
+  clearInterval(upTimer);upTimer=setInterval(()=>{left--;cnt.textContent=left;if(left<=0)switchTo(nx.id)},1000);
+}
+function cancelNext(){clearInterval(upTimer);upTimer=null;if(nextEl)nextEl.style.display='none'}
+async function switchTo(id,{autoplay=true}={}){
+  cancelNext();if(recorder)return;
+  const was=playing;pause();
+  let A;try{A=await preloadAnim(id)}catch(e){console.error(e);return}
+  preload=null;activate(A);CUR=id;T0=0;applyUI();
+  if(window.top===window.self&&location.protocol!=='file:')history.replaceState(null,'',`?id=${id}`);
+  try{window.parent!==window&&window.parent.postMessage({type:'k8s-anim',id},'*')}catch(e){}
+  if(autoplay||was)play();else frame();
+}
+function toggleAuto(){autoNext=!autoNext;try{localStorage.setItem('k8s-anim-autonext',autoNext?'1':'0')}catch(e){}
+  autoBtn.textContent=autoNext?'⟳ 连播':'⟳ 连播关';autoBtn.style.opacity=autoNext?1:.55;if(!autoNext)cancelNext()}
+
+// 与当前动画相关的界面：开始页文案、主题色、章节按钮与进度刻度、上一部 / 下一部
+function applyUI(){
   const D=ANIM_DEF,M=D.meta;
   // 开始页文案
   const st=D.start||{};
@@ -638,12 +679,34 @@ async function boot(id){
   document.getElementById('h1').innerHTML=(st.title||M.title).split('\n').map(s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]))).join('<br>');
   const mins=TOTAL<90?`约 ${Math.round(TOTAL/10)*10} 秒`:`约 ${Math.round(TOTAL/30)/2} 分钟`;
   document.getElementById('sub').textContent=st.sub||`${mins} · 含中文旁白、背景音乐与音效`;
-  if(S)document.documentElement.style.setProperty('--accent',S.color);
-
-  ppBtn=document.getElementById('pp');fill=document.getElementById('fill');timeEl=document.getElementById('time');track=document.getElementById('track');bar=document.getElementById('bar');
-  const chWrap=document.getElementById('chapters');
+  document.documentElement.style.setProperty('--accent',S?S.color:'#326CE5');
+  const chWrap=document.getElementById('chapters');chWrap.innerHTML='';track.querySelectorAll('.tick').forEach(k=>k.remove());
   SCENES.forEach(s=>{const b=document.createElement('button');b.className='ch';b.textContent=s.name;b.onclick=()=>seek(s.start+.01);chWrap.appendChild(b);
     if(s.start>0){const k=document.createElement('div');k.className='tick';k.style.left=(s.start/TOTAL*100)+'%';track.appendChild(k)}});
+  const pv=neighbor(-1),nx=neighbor(1);
+  prevBtn.disabled=!pv;prevBtn.title=pv?`上一部：${pv.title}（Shift+P）`:'';
+  nextBtn.disabled=!nx;nextBtn.title=nx?`下一部：${nx.title}（Shift+N）`:'';
+  const i=listPos();document.getElementById('listPos').textContent=i>=0?`${i+1} / ${PLAYLIST.length}`:'';
+  if(M)homeEl.href=`/learn/${D.id}`,homeEl.textContent='← 回到课文';else homeEl.href='/',homeEl.textContent='← K8s Journey 课程';
+}
+
+async function boot(id){
+  cv=document.getElementById('c');ctx=cv.getContext('2d');
+  const [A,list]=await Promise.all([prepareAnim(id,ANIM_DEF),fetch('/animation/playlist.json').then(r=>r.ok?r.json():[]).catch(()=>[])]);
+  activate(A);CUR=id;PLAYLIST=list;
+  const base=`/animation/${id}`;
+  try{autoNext=localStorage.getItem('k8s-anim-autonext')!=='0'}catch(e){}
+
+  ppBtn=document.getElementById('pp');fill=document.getElementById('fill');timeEl=document.getElementById('time');track=document.getElementById('track');bar=document.getElementById('bar');
+  prevBtn=document.getElementById('prev');nextBtn=document.getElementById('next');autoBtn=document.getElementById('auto');nextEl=document.getElementById('upnext');
+  homeEl=document.getElementById('home');
+  prevBtn.onclick=()=>{const p=neighbor(-1);if(p)switchTo(p.id)};nextBtn.onclick=()=>{const n=neighbor(1);if(n)switchTo(n.id)};
+  autoBtn.onclick=toggleAuto;autoNext=!autoNext;toggleAuto();
+  document.getElementById('nextNow').onclick=()=>{const n=neighbor(1);if(n)switchTo(n.id)};
+  document.getElementById('nextCancel').onclick=cancelNext;
+  applyUI();
+  // 站点页面可通过 postMessage 让嵌入的播放器切到某一部
+  window.addEventListener('message',e=>{if(e.origin===location.origin&&e.data&&e.data.type==='k8s-anim-play'&&PLAYLIST.some(a=>a.id===e.data.id)&&AC)switchTo(e.data.id)});
   track.onclick=e=>{const r=track.getBoundingClientRect();seek((e.clientX-r.left)/r.width*TOTAL)};
   ppBtn.onclick=()=>playing?pause():play();
   // 点击画面：暂停 / 继续，并在中央短暂显示状态图标
@@ -657,12 +720,12 @@ async function boot(id){
   startEl=document.getElementById('start');
   document.addEventListener('keydown',e=>{if(startEl.style.display!=='none'&&!AC)return;
     if(e.code==='Space'){e.preventDefault();flashReady=true;playing?pause():play()}else if(e.code==='ArrowLeft')seek(now()-5);else if(e.code==='ArrowRight')seek(now()+5);
-    else if(e.key==='m'||e.key==='M')toggleMute();else if(e.key==='v'||e.key==='V')toggleVO();else if(e.key==='f'||e.key==='F')document.getElementById('fs').click()});
+    else if(e.key==='m'||e.key==='M')toggleMute();else if(e.key==='v'||e.key==='V')toggleVO();else if(e.key==='f'||e.key==='F')document.getElementById('fs').click();
+    else if(e.shiftKey&&e.code==='KeyN')nextBtn.click();else if(e.shiftKey&&e.code==='KeyP')prevBtn.click();else if(e.code==='Escape')cancelNext()});
   let hideT;document.addEventListener('mousemove',()=>{bar.classList.add('show');clearTimeout(hideT);hideT=setTimeout(()=>bar.classList.remove('show'),2200)});
   document.getElementById('exp').onclick=()=>{if(recorder){stopRec();return}startRec()};
   // 独立打开（非 iframe 嵌入）时显示返回课程站的链接
-  const home=document.getElementById('home');
-  if(M)home.href=`/learn/${D.id}`,home.textContent='← 回到课文';
+  const home=homeEl;
   if(window.top===window.self){if(location.protocol!=='file:')home.style.display='flex'}else document.getElementById('goRec').style.display='none';
   function begin(rec){initAudio();if(AC.state==='suspended')AC.resume();home.style.display='none';startEl.style.opacity=0;setTimeout(()=>startEl.style.display='none',600);if(rec)startRec();else{T0=0;play()}}
   document.getElementById('go').onclick=()=>begin(false);

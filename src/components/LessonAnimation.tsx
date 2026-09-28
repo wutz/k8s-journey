@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { findAnimation, formatDuration, playerUrl, posterUrl } from '~/lib/animations'
+import { useEffect, useState } from 'react'
+import { Link } from '@tanstack/react-router'
+import { findAnimation, formatDuration, onPlayerSwitch, playerUrl, posterUrl } from '~/lib/animations'
 
 export function PlayIcon({ className }: { className?: string }) {
   return (
@@ -13,7 +14,11 @@ export function PlayIcon({ className }: { className?: string }) {
 export function LessonAnimation({ slug, title }: { slug: string; title: string }) {
   const anim = findAnimation(slug)
   const [open, setOpen] = useState(false)
+  // 播完会自动连播下一课的动画；此时在画框下方提示正在播放哪一课
+  const [playingId, setPlayingId] = useState(slug)
+  useEffect(() => onPlayerSwitch(setPlayingId), [])
   if (!anim) return null
+  const other = playingId !== slug ? findAnimation(playingId) : undefined
   const duration = formatDuration(anim.duration)
 
   return (
@@ -50,9 +55,18 @@ export function LessonAnimation({ slug, title }: { slug: string; title: string }
         )}
       </div>
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 text-sm text-mute">
-        <span>
-          <span className="font-medium text-body">动画速览</span> · {duration} · {anim.scenes.length - 2} 个要点 · 含中文旁白
-        </span>
+        {other ? (
+          <span>
+            <span className="font-medium text-body">正在连播</span> · {other.title ?? playingId} ·{' '}
+            <Link to="/learn/$slug" params={{ slug: playingId }} className="font-medium text-accent hover:text-accent-deep">
+              前往这一课 →
+            </Link>
+          </span>
+        ) : (
+          <span>
+            <span className="font-medium text-body">动画速览</span> · {duration} · {anim.scenes.length - 2} 个要点 · 含中文旁白 · 播完自动连播下一课
+          </span>
+        )}
         <a
           href={playerUrl(slug)}
           target="_blank"
