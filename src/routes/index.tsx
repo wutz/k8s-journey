@@ -1,5 +1,7 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { allLessons, stages, totalMinutes } from '~/content/curriculum'
+import { PlayIcon } from '~/components/LessonAnimation'
+import { findAnimation, formatDuration, posterUrl } from '~/lib/animations'
 
 export const Route = createFileRoute('/')({
   component: Home,
@@ -38,6 +40,7 @@ const method = [
 
 function Home() {
   const hours = Math.round(totalMinutes / 60)
+  const journeyLength = formatDuration(findAnimation('journey')?.duration ?? 181)
   return (
     <main>
       {/* Hero */}
@@ -119,7 +122,7 @@ function Home() {
             <h2 className="mt-3 text-[32px] font-semibold leading-10 tracking-[-1.28px]">先用 3 分钟，看完整条航程</h2>
             <p className="mt-3 text-body">
               一部带中文旁白的动画：从一个容器、一个 Pod 讲起，看它们如何自愈、扩容、上线到生产集群，最后调度 GPU
-              跑起大模型。六个阶段，一眼看清要去哪里。
+              跑起大模型。六个阶段，一眼看清要去哪里。每一课的开头，也配有一段一分多钟的动画速览。
             </p>
             <Link
               to="/animation"
@@ -132,20 +135,20 @@ function Home() {
           <Link
             to="/animation"
             aria-label="播放 K8s Journey 动画"
-            className="group relative block aspect-video overflow-hidden rounded-2xl border border-hairline bg-[#05070c] shadow-[var(--shadow-float)]"
+            className="group relative block aspect-video overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[var(--shadow-float)]"
           >
             <img
-              src="/animation/poster.jpg"
+              src={posterUrl('journey')}
               alt="动画封面：从第一个 Pod 到生产级集群"
               loading="lazy"
               className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             />
-            <span className="absolute bottom-3 left-3 inline-flex h-9 items-center gap-2 rounded-full bg-white/90 px-4 text-sm font-medium text-ink shadow-lg transition-transform group-hover:scale-105">
+            <span className="absolute bottom-3 left-3 inline-flex h-9 items-center gap-2 rounded-full bg-ink px-4 text-sm font-medium text-white shadow-lg transition-transform group-hover:scale-105">
               <PlayIcon className="size-3.5" />
               播放
             </span>
-            <span className="absolute bottom-3 right-3 rounded-md bg-black/60 px-2 py-0.5 font-mono text-xs text-white">
-              3:01
+            <span className="absolute bottom-3 right-3 rounded-md bg-ink/80 px-2 py-0.5 font-mono text-xs text-white">
+              {journeyLength}
             </span>
           </Link>
         </div>
@@ -244,13 +247,5 @@ function Home() {
         </Link>
       </section>
     </main>
-  )
-}
-
-function PlayIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden className={className}>
-      <path d="M8 5.14v13.72a1 1 0 0 0 1.5.86l11.2-6.86a1 1 0 0 0 0-1.72L9.5 4.28A1 1 0 0 0 8 5.14Z" />
-    </svg>
   )
 }

@@ -1,22 +1,20 @@
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { findLesson, stages } from '~/content/curriculum'
-
-// 播放器是 public/animation/player.html 中的独立页面（Canvas + Web Audio，旁白音频内嵌），这里用 iframe 嵌入
-const PLAYER = '/animation/player.html'
+import { PLAYER, findAnimation, formatDuration, lessonAnimationTotal, posterUrl } from '~/lib/animations'
 
 export const Route = createFileRoute('/animation')({
   head: () => ({
     meta: [
       { title: '动画速览 · K8s Journey' },
-      { name: 'description', content: '3 分钟动画，带中文旁白：看 Kubernetes 从第一个 Pod 一路走到生产级集群与 AI 平台。' },
+      { name: 'description', content: '3 分钟动画，带中文旁白：看 Kubernetes 从第一个 Pod 一路走到生产级集群与 AI 平台；每一课另有一段动画速览。' },
       { property: 'og:title', content: 'K8s Journey · 3 分钟动画速览' },
-      { property: 'og:image', content: '/animation/poster.jpg' },
+      { property: 'og:image', content: posterUrl('journey') },
     ],
   }),
   component: AnimationPage,
 })
 
-// 动画各章节在时间轴上的位置，与 player.html 中 SCENES 的时长对应
+// 动画各章节在时间轴上的位置，与 public/animation/journey/scenes.js 中各场景的时长对应
 const chapters = [
   { stage: 0, at: '0:09', topics: '容器与镜像、为什么需要编排、用 kind 搭建本地集群', lessons: ['containers', 'why-kubernetes', 'local-cluster'] },
   { stage: 1, at: '0:34', topics: '声明式 API、Pod、标签与命名空间、Deployment 自愈、Service 负载均衡', lessons: ['kubectl-and-yaml', 'pods', 'labels-namespaces', 'deployments', 'services'] },
@@ -43,7 +41,7 @@ function AnimationPage() {
         开始学习之前，先用 3 分钟看完整条航程：六个阶段各讲什么、会遇到哪些关键概念。含中文旁白、背景音乐与音效，建议佩戴耳机。
       </p>
 
-      <div className="relative mt-10 aspect-video overflow-hidden rounded-2xl border border-hairline bg-[#05070c] shadow-[var(--shadow-float)]">
+      <div className="relative mt-10 aspect-video overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[var(--shadow-float)]">
         <iframe
           src={PLAYER}
           title="K8s Journey 动画：从第一个 Pod 到生产级集群"
@@ -102,6 +100,55 @@ function AnimationPage() {
             )
           })}
         </ol>
+      </section>
+
+      <section className="mt-20">
+        <p className="eyebrow">Lessons</p>
+        <h2 className="mt-3 text-[32px] font-semibold leading-10 tracking-[-1.28px]">每一课，都有一段动画速览</h2>
+        <p className="mt-3 max-w-2xl text-body">
+          每段一分半左右，把一课最关键的几个概念画出来讲一遍，共约 {Math.round(lessonAnimationTotal() / 60)} 分钟。动画放在每篇课文的开头，也可以在这里挑着看。
+        </p>
+        <div className="mt-10 space-y-12">
+          {stages.map((s) => (
+            <div key={s.id}>
+              <p className="text-sm font-medium text-ink">
+                <span className="font-mono text-accent">{String(s.index).padStart(2, '0')}</span> {s.name}
+                <span className="ml-2 font-normal text-mute">{s.tagline}</span>
+              </p>
+              <ul className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {s.lessons.map((l) => {
+                  const a = findAnimation(l.slug)
+                  if (!a) return null
+                  return (
+                    <li key={l.slug}>
+                      <Link
+                        to="/learn/$slug"
+                        params={{ slug: l.slug }}
+                        className="group block overflow-hidden rounded-xl border border-hairline bg-elevated transition-shadow hover:shadow-[var(--shadow-float)]"
+                      >
+                        <div className="relative aspect-video overflow-hidden border-b border-hairline bg-canvas">
+                          <img
+                            src={posterUrl(l.slug)}
+                            alt=""
+                            loading="lazy"
+                            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                          />
+                          <span className="absolute bottom-2 right-2 rounded-md bg-ink/80 px-1.5 py-0.5 font-mono text-[11px] text-white">
+                            {formatDuration(a.duration)}
+                          </span>
+                        </div>
+                        <div className="p-4">
+                          <p className="font-medium text-ink group-hover:text-accent transition-colors">{l.title}</p>
+                          <p className="mt-1 line-clamp-1 text-sm text-mute">{a.scenes.slice(1, -1).join(' · ')}</p>
+                        </div>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
     </main>
   )

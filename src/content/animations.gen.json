@@ -1,0 +1,496 @@
+{
+  "autoscaling": {
+    "duration": 98,
+    "scenes": [
+      "片头",
+      "三层扩缩",
+      "metrics-server",
+      "HPA 算法",
+      "扩快缩慢",
+      "节点扩缩",
+      "小结"
+    ],
+    "title": "自动扩缩容"
+  },
+  "batch-scheduling": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "Gang 调度",
+      "准入层与调度层",
+      "Kueue 工作流",
+      "Cohort 借用",
+      "选型与共存",
+      "小结"
+    ],
+    "title": "批调度：Kueue、Volcano 与 Gang 调度"
+  },
+  "cluster-planning": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "命名规范",
+      "奇数控制平面",
+      "高可用拓扑",
+      "地址规划",
+      "etcd 磁盘验收",
+      "小结"
+    ],
+    "title": "生产集群规划"
+  },
+  "configmaps-secrets": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "镜像与配置解耦",
+      "环境变量注入",
+      "卷挂载与 ..data",
+      "改了配置会怎样",
+      "Secret 与生产实践",
+      "小结"
+    ],
+    "title": "ConfigMap 与 Secret"
+  },
+  "containers": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "Namespace 隔离",
+      "cgroup 限额",
+      "镜像分层",
+      "运行时调用链",
+      "多阶段构建",
+      "小结"
+    ],
+    "title": "容器基础：从进程到镜像"
+  },
+  "control-plane": {
+    "duration": 98,
+    "scenes": [
+      "片头",
+      "请求处理链",
+      "etcd 与 Raft",
+      "list-watch 接力",
+      "调度",
+      "kubelet",
+      "小结"
+    ],
+    "title": "控制平面深入：一个 Pod 的诞生"
+  },
+  "crd-operator": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "为什么扩展 API",
+      "CRD 注册新资源",
+      "schema 校验",
+      "Reconcile 循环",
+      "成熟度与生态",
+      "小结"
+    ],
+    "title": "CRD 与 Operator 模式"
+  },
+  "day2-operations": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "版本规则",
+      "分阶段升级",
+      "drain 与 PDB",
+      "etcd 快照",
+      "压缩与碎片整理",
+      "小结"
+    ],
+    "title": "Day-2 运维：升级、扩容与 etcd 维护"
+  },
+  "deployments": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "ReplicaSet 自愈",
+      "Deployment 层级",
+      "滚动更新",
+      "历史与回滚",
+      "发布策略",
+      "小结"
+    ],
+    "title": "ReplicaSet 与 Deployment"
+  },
+  "distributed-training": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "Trainer 编排",
+      "RDMA 数据路径",
+      "Network Operator",
+      "NCCL 带宽验收",
+      "并行策略",
+      "小结"
+    ],
+    "title": "分布式训练与高性能网络"
+  },
+  "gpu-operator": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "设备插件",
+      "NFD 与 Operator",
+      "驱动策略",
+      "装箱打分",
+      "GPU 共享",
+      "小结"
+    ],
+    "title": "GPU 调度与 GPU Operator"
+  },
+  "helm-kustomize": {
+    "duration": 98,
+    "scenes": [
+      "片头",
+      "两种思路",
+      "Chart 与 Release",
+      "values 优先级",
+      "base 与 overlay",
+      "Helmwave 编排",
+      "小结"
+    ],
+    "title": "用 Helm 与 Kustomize 管理应用"
+  },
+  "ingress-gateway": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "七层入口",
+      "Ingress 规则",
+      "Ingress 的局限",
+      "Gateway API",
+      "流量切分",
+      "小结"
+    ],
+    "title": "Ingress 与 Gateway API"
+  },
+  "jobs-daemonsets": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "运行到完成",
+      "失败与重试",
+      "并行与索引",
+      "CronJob",
+      "DaemonSet",
+      "小结"
+    ],
+    "title": "Job、CronJob 与 DaemonSet"
+  },
+  "journey": {
+    "duration": 181,
+    "scenes": [
+      "片头",
+      "00 启程",
+      "01 入门",
+      "02 进阶",
+      "03 原理",
+      "04 生产",
+      "05 专家",
+      "终章"
+    ]
+  },
+  "kubectl-and-yaml": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "一切皆对象",
+      "kubectl 与 kubeconfig",
+      "命令式与声明式",
+      "explain 与 dry-run",
+      "diff 再 apply",
+      "小结"
+    ],
+    "title": "kubectl 与声明式 API"
+  },
+  "kubespray": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "Kubespray 是什么",
+      "inventory 规划",
+      "关键变量",
+      "GPU 装箱调度",
+      "扩容与重置",
+      "小结"
+    ],
+    "title": "用 Kubespray 部署高可用集群"
+  },
+  "labels-namespaces": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "标签与选择器",
+      "标签是胶水",
+      "标签还是注解",
+      "命名空间",
+      "ResourceQuota",
+      "小结"
+    ],
+    "title": "标签、注解与命名空间"
+  },
+  "llm-inference": {
+    "duration": 101,
+    "scenes": [
+      "片头",
+      "Prefill 与 Decode",
+      "单机 vLLM",
+      "LeaderWorkerSet",
+      "推理网关",
+      "PD 分离与 llm-d",
+      "小结"
+    ],
+    "title": "大模型推理服务"
+  },
+  "local-cluster": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "kind 原理",
+      "声明式建集群",
+      "集群里的组件",
+      "部署 nginx",
+      "访问与调试",
+      "小结"
+    ],
+    "title": "搭建本地实验集群"
+  },
+  "multi-tenancy": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "隔离的层次",
+      "命名空间租户",
+      "vcluster",
+      "Kamaji",
+      "GitOps",
+      "小结"
+    ],
+    "title": "多租户与平台工程"
+  },
+  "networking-model": {
+    "duration": 98,
+    "scenes": [
+      "片头",
+      "三条原则",
+      "overlay 与路由",
+      "CNI 规范",
+      "kube-proxy",
+      "Cilium eBPF",
+      "小结"
+    ],
+    "title": "网络模型与 CNI"
+  },
+  "next-steps": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "三门认证",
+      "练速度",
+      "版本节奏",
+      "KEP 与废弃 API",
+      "参与社区",
+      "小结"
+    ],
+    "title": "认证考试与持续成长"
+  },
+  "observability": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "四类信号",
+      "指标栈",
+      "告警规则",
+      "日志采集",
+      "事件持久化",
+      "小结"
+    ],
+    "title": "可观测性：指标、日志与事件"
+  },
+  "pods": {
+    "duration": 101,
+    "scenes": [
+      "片头",
+      "为什么是 Pod",
+      "生命周期",
+      "重启策略",
+      "调试三件套",
+      "Init 与 Sidecar",
+      "小结"
+    ],
+    "title": "Pod：最小调度单元"
+  },
+  "probes-resources": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "三种探针",
+      "就绪 vs 存活",
+      "requests 与 limits",
+      "QoS 等级",
+      "LimitRange 与 Quota",
+      "小结"
+    ],
+    "title": "健康检查与资源管理"
+  },
+  "production-networking": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "Cilium",
+      "MetalLB L2",
+      "排除标签的坑",
+      "cert-manager",
+      "Gateway API",
+      "小结"
+    ],
+    "title": "生产网络：Cilium、MetalLB 与证书"
+  },
+  "production-storage": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "选型三问",
+      "WaitForFirstConsumer",
+      "Rook-Ceph",
+      "副本与纠删码",
+      "VolumeSnapshot",
+      "小结"
+    ],
+    "title": "生产存储：CSI 选型与 Rook-Ceph"
+  },
+  "rbac": {
+    "duration": 98,
+    "scenes": [
+      "片头",
+      "认证",
+      "投射 Token",
+      "RBAC 四对象",
+      "ClusterRole 两种用法",
+      "can-i 验证",
+      "小结"
+    ],
+    "title": "认证、授权与 RBAC"
+  },
+  "registry": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "一次拉取",
+      "Registry 与 Harbor",
+      "hosts.toml",
+      "imagePullSecrets",
+      "P2P 分发",
+      "小结"
+    ],
+    "title": "镜像仓库与镜像分发"
+  },
+  "scheduling": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "过滤与打分",
+      "污点与容忍",
+      "拓扑分布",
+      "优先级与抢占",
+      "节点维护",
+      "小结"
+    ],
+    "title": "调度：亲和性、污点与拓扑分布"
+  },
+  "security": {
+    "duration": 97,
+    "scenes": [
+      "片头",
+      "securityContext",
+      "Pod 安全标准",
+      "NetworkPolicy",
+      "按域名管出口",
+      "准入策略 VAP",
+      "小结"
+    ],
+    "title": "工作负载安全加固"
+  },
+  "services": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "为什么需要 Service",
+      "ClusterIP 与端口",
+      "EndpointSlice",
+      "DNS 与 Headless",
+      "对外暴露与别名",
+      "小结"
+    ],
+    "title": "Service 与服务发现"
+  },
+  "statefulsets": {
+    "duration": 98,
+    "scenes": [
+      "片头",
+      "稳定身份",
+      "Headless Service",
+      "OrderedReady vs Parallel",
+      "扩缩容与 PVC",
+      "滚动更新与分区",
+      "小结"
+    ],
+    "title": "StatefulSet 与有状态应用"
+  },
+  "storage-basics": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "临时卷 vs 持久卷",
+      "PV / PVC / StorageClass",
+      "动态供给与延迟绑定",
+      "访问模式",
+      "回收策略",
+      "小结"
+    ],
+    "title": "存储：Volume、PV、PVC 与 StorageClass"
+  },
+  "troubleshooting": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "排查路径",
+      "Pod 状态",
+      "Service 不通",
+      "kubectl debug",
+      "节点 NotReady",
+      "小结"
+    ],
+    "title": "故障排查方法论"
+  },
+  "welcome": {
+    "duration": 99,
+    "scenes": [
+      "片头",
+      "为什么按路线学",
+      "六个阶段",
+      "每课结构",
+      "建议节奏",
+      "实验环境",
+      "小结"
+    ],
+    "title": "学习路线与使用指南"
+  },
+  "why-kubernetes": {
+    "duration": 100,
+    "scenes": [
+      "片头",
+      "手工运维",
+      "命令式 vs 声明式",
+      "控制循环",
+      "架构全景",
+      "一次 apply",
+      "小结"
+    ],
+    "title": "为什么需要 Kubernetes"
+  }
+}
