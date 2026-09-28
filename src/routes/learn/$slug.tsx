@@ -5,6 +5,7 @@ import { getLessonContent } from '~/lib/lessons'
 import { useProgress } from '~/lib/progress'
 import { CurriculumNav } from '~/components/CurriculumNav'
 import { Toc } from '~/components/Toc'
+import { LessonAnimation } from '~/components/LessonAnimation'
 
 export const Route = createFileRoute('/learn/$slug')({
   loader: async ({ params }) => {
@@ -83,6 +84,8 @@ function LessonPage() {
             </span>
           </div>
         </header>
+
+        <LessonAnimation key={slug} slug={slug} title={lesson.title} />
 
         <article
           ref={articleRef}
