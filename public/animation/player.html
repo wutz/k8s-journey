@@ -35,28 +35,41 @@
   .pill.ghost:hover{background:#f5f5f5}
   /* 嵌入到课程页的小尺寸画框里时收紧开始页与控制栏 */
   @media (max-width:720px),(max-height:460px){#start{gap:14px}#start h1{font-size:clamp(22px,6vw,40px)}#start p{display:none}.pill{padding:10px 18px;font-size:14px}#start .logo svg{width:28px;height:28px}}
-  @media (max-width:520px){#goRec{display:none}#listPos,#auto{display:none}#bar{padding:10px 12px}#chapters{display:none}.btn{height:28px;font-size:12px;padding:0 7px}#exp,#back,#fwd{display:none}}
-  #bar{position:fixed;left:0;right:0;bottom:0;padding:18px 24px 16px;background:linear-gradient(rgba(250,250,250,0),rgba(250,250,250,.94) 45%);display:flex;flex-direction:column;gap:10px;opacity:0;transition:opacity .3s;z-index:5}
-  #wrap:hover~#bar,#bar:hover,#bar.show{opacity:1}
-  #track{position:relative;height:6px;border-radius:3px;background:rgba(0,0,0,.08);cursor:pointer}
-  #fill{position:absolute;left:0;top:0;bottom:0;border-radius:3px;background:linear-gradient(90deg,#007cf0,var(--accent),#7928ca)}
-  .tick{position:absolute;top:-4px;width:2px;height:14px;background:rgba(0,0,0,.2);border-radius:1px}
+  @media (max-width:520px){#goRec{display:none}}
+  /* 控制栏：纯图标按钮，按画框大小逐级收起次要控件，保证小画框里也能完整显示 */
+  #bar{position:fixed;left:0;right:0;bottom:0;padding:24px 16px 10px;background:linear-gradient(rgba(250,250,250,0),rgba(250,250,250,.94) 55%);display:flex;flex-direction:column;gap:6px;opacity:0;transition:opacity .3s;z-index:5}
+  #wrap:hover~#bar,#bar:hover,#bar.show,#bar:focus-within{opacity:1}
+  #track{position:relative;height:16px;cursor:pointer;touch-action:none}
+  #track::before{content:"";position:absolute;left:0;right:0;top:6px;height:4px;border-radius:2px;background:rgba(0,0,0,.1);transition:height .15s,top .15s}
+  #track:hover::before{top:5px;height:6px}
+  #fill{position:absolute;left:0;top:6px;height:4px;border-radius:2px;background:linear-gradient(90deg,#007cf0,var(--accent),#7928ca);transition:height .15s,top .15s}
+  #track:hover #fill{top:5px;height:6px}
+  .tick{position:absolute;top:6px;width:2px;height:4px;background:#fafafa}
   #chapters{display:flex;gap:6px;flex-wrap:wrap}
-  .ch{font:500 12px "Geist Mono",Menlo,monospace;color:var(--body);background:#fff;border:1px solid var(--hair);border-radius:6px;padding:4px 8px;cursor:pointer}
+  .ch{font:500 12px "Geist Mono",Menlo,monospace;color:var(--body);background:#fff;border:1px solid var(--hair);border-radius:6px;padding:3px 8px;cursor:pointer}
   .ch:hover{border-color:#d4d4d4}
   .ch.on{color:#fff;border-color:var(--accent);background:var(--accent)}
-  #row{display:flex;align-items:center;gap:10px}
-  #row .logo svg{width:22px;height:22px;display:block}
-  .btn{appearance:none;border:1px solid var(--hair);background:#fff;color:var(--ink);border-radius:6px;height:32px;min-width:36px;padding:0 10px;font:500 13px Geist,"PingFang SC",sans-serif;cursor:pointer}
-  .btn:hover{background:#f5f5f5}
-  #time{font:500 13px "Geist Mono",Menlo,monospace;color:var(--body);margin-left:4px}
+  #row{display:flex;align-items:center;gap:2px;min-width:0}
+  .btn{appearance:none;border:0;background:transparent;color:var(--ink);border-radius:8px;width:36px;height:36px;flex:none;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:background .15s,opacity .15s}
+  .btn:hover{background:rgba(0,0,0,.06)}
+  .btn svg{width:20px;height:20px;display:block}
+  .btn.main svg{width:22px;height:22px}
+  .btn.off{opacity:.45}
+  .btn:disabled{opacity:.25;cursor:default;background:transparent}
+  #time{font:500 12px "Geist Mono",Menlo,monospace;color:var(--body);margin-left:6px;white-space:nowrap;flex:none}
+  #chName{font-size:12px;color:var(--mute);margin-left:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
   .sp{flex:1}
+  #listPos{font:500 12px "Geist Mono",Menlo,monospace;color:var(--mute);margin-right:6px;white-space:nowrap}
+  /* 章节按钮只在大画框里显示，其余尺寸用"当前章节名"代替 */
+  @media (max-width:899px),(max-height:520px){#chapters{display:none}}
+  @media (min-width:900px) and (min-height:521px){#chName{display:none}}
+  @media (max-width:640px){#exp,#listPos{display:none}#chName{display:none}}
+  @media (max-width:480px){#bar{padding:20px 8px 6px;gap:2px}.btn{width:32px;height:32px}.btn svg{width:18px;height:18px}#auto,#voBtn{display:none}#time{margin-left:2px}}
+  @media (max-width:340px){#prev,#next{display:none}#time{font-size:11px}}
+  #rec{position:fixed;top:16px;right:18px;font:600 12px "Geist Mono",monospace;color:#fff;background:#e5383b;border-radius:999px;padding:5px 12px;display:none;z-index:6}
   #flash{position:fixed;left:50%;top:50%;width:92px;height:92px;margin:-46px 0 0 -46px;border-radius:50%;background:rgba(255,255,255,.8);box-shadow:0 8px 30px rgba(0,0,0,.12),0 0 0 1px var(--hair);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;pointer-events:none;opacity:0;transform:scale(.8);z-index:4}
   #flash.go{animation:flash .7s ease-out}
   @keyframes flash{0%{opacity:0;transform:scale(.8)}20%{opacity:1;transform:scale(1)}100%{opacity:0;transform:scale(1.25)}}
-  #rec{position:fixed;top:16px;right:18px;font:600 12px "Geist Mono",monospace;color:#fff;background:#e5383b;border-radius:999px;padding:5px 12px;display:none;z-index:6}
-  .btn:disabled{opacity:.35;cursor:default;background:#fff}
-  #listPos{font:500 12px "Geist Mono",Menlo,monospace;color:var(--mute)}
   /* 连播：一部结束后的"接下来"卡片 */
   #upnext{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:8;background:rgba(250,250,250,.72);backdrop-filter:blur(6px)}
   #upnext .card{background:#fff;border-radius:16px;box-shadow:0 0 0 1px var(--hair),0 16px 48px rgba(0,0,0,.10);padding:28px 32px;max-width:min(560px,90vw);display:flex;flex-direction:column;gap:12px;text-align:center}
@@ -86,20 +99,18 @@
   <div id="chapters"></div>
   <div id="track"><div id="fill"></div></div>
   <div id="row">
-    <span class="logo" title="K8s Journey"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#171717"/><path d="M16 6.5l8.2 4v9L16 25.5l-8.2-6v-9z" fill="none" stroke="#326ce5" stroke-width="2.2" stroke-linejoin="round"/><circle cx="16" cy="16" r="2.6" fill="#fff"/></svg></span>
-    <button class="btn" id="prev" aria-label="上一部">⏮</button>
-    <button class="btn" id="pp">❚❚</button>
-    <button class="btn" id="next" aria-label="下一部">⏭</button>
-    <button class="btn" id="back">↺ 5s</button>
-    <button class="btn" id="fwd">5s ↻</button>
+    <button class="btn" id="prev" aria-label="上一部" data-i="prev"></button>
+    <button class="btn main" id="pp" aria-label="暂停（空格）" data-i="pause"></button>
+    <button class="btn" id="next" aria-label="下一部" data-i="next"></button>
     <span id="time">0:00 / 0:00</span>
+    <span id="chName"></span>
     <span class="sp"></span>
     <span id="listPos"></span>
-    <button class="btn" id="auto" title="播完自动接着播下一部">⟳ 连播</button>
-    <button class="btn" id="mute">🔊 声音</button>
-    <button class="btn" id="voBtn" title="开关中文旁白（V）">🎙 旁白</button>
-    <button class="btn" id="exp">● 导出视频</button>
-    <button class="btn" id="fs">⛶ 全屏</button>
+    <button class="btn" id="auto" aria-label="连播：播完自动接着播下一部" data-i="auto"></button>
+    <button class="btn" id="voBtn" aria-label="旁白（V）" data-i="vo"></button>
+    <button class="btn" id="mute" aria-label="静音（M）" data-i="vol"></button>
+    <button class="btn" id="exp" aria-label="导出视频" data-i="rec"></button>
+    <button class="btn" id="fs" aria-label="全屏（F）" data-i="fs"></button>
   </div>
 </div>
 <div id="upnext" role="dialog" aria-label="接下来播放">
