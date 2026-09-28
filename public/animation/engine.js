@@ -690,6 +690,30 @@ function applyUI(){
   if(M)homeEl.href=`/learn/${D.id}`,homeEl.textContent='← 回到课文';else homeEl.href='/',homeEl.textContent='← K8s Journey 课程';
 }
 
+/* ---------- 全屏：iPhone Safari 不支持对普通元素调用 Fullscreen API（iPad / 旧版 Safari 只有 webkit 前缀），
+   这时退回"网页全屏"——嵌入时通知父页面把画框铺满视口；Android 等支持的浏览器全屏后尽量锁定横屏 ---------- */
+let pseudoFs=false,fsBtn;
+const fsElement=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
+const fsSupported=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+const embedded=()=>window.parent!==window;
+function updFsBtn(){fsBtn.textContent=fsElement()||pseudoFs?'⛶ 退出全屏':'⛶ 全屏'}
+function setPseudoFs(on){pseudoFs=on;
+  try{embedded()&&window.parent.postMessage({type:'k8s-anim-fs',on},'*')}catch(e){}updFsBtn()}
+function toggleFs(){
+  if(pseudoFs)return setPseudoFs(false);
+  if(fsElement()){const ex=document.exitFullscreen||document.webkitExitFullscreen;ex&&ex.call(document);return}
+  if(!fsSupported()){if(embedded())setPseudoFs(true);return}
+  const el=document.documentElement,req=el.requestFullscreen||el.webkitRequestFullscreen;
+  Promise.resolve(req.call(el)).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}},()=>{if(embedded())setPseudoFs(true)});
+}
+function setupFullscreen(){
+  fsBtn=document.getElementById('fs');fsBtn.onclick=toggleFs;
+  // 独立打开且浏览器不支持全屏（如 iPhone）时，页面本身已铺满视口，隐藏按钮
+  if(!fsSupported()&&!embedded())fsBtn.style.display='none';
+  const onChange=()=>{if(!fsElement())try{screen.orientation.unlock()}catch(e){}updFsBtn()};
+  document.addEventListener('fullscreenchange',onChange);document.addEventListener('webkitfullscreenchange',onChange);
+}
+
 async function boot(id){
   cv=document.getElementById('c');ctx=cv.getContext('2d');
   const [A,list]=await Promise.all([prepareAnim(id,ANIM_DEF),fetch('/animation/playlist.json').then(r=>r.ok?r.json():[]).catch(()=>[])]);
@@ -716,13 +740,15 @@ async function boot(id){
   document.getElementById('fwd').onclick=()=>seek(now()+5);
   muteBtn=document.getElementById('mute');muteBtn.onclick=toggleMute;
   voBtn=document.getElementById('voBtn');voBtn.onclick=toggleVO;
-  document.getElementById('fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+  setupFullscreen();
   startEl=document.getElementById('start');
   document.addEventListener('keydown',e=>{if(startEl.style.display!=='none'&&!AC)return;
     if(e.code==='Space'){e.preventDefault();flashReady=true;playing?pause():play()}else if(e.code==='ArrowLeft')seek(now()-5);else if(e.code==='ArrowRight')seek(now()+5);
     else if(e.key==='m'||e.key==='M')toggleMute();else if(e.key==='v'||e.key==='V')toggleVO();else if(e.key==='f'||e.key==='F')document.getElementById('fs').click();
-    else if(e.shiftKey&&e.code==='KeyN')nextBtn.click();else if(e.shiftKey&&e.code==='KeyP')prevBtn.click();else if(e.code==='Escape')cancelNext()});
-  let hideT;document.addEventListener('mousemove',()=>{bar.classList.add('show');clearTimeout(hideT);hideT=setTimeout(()=>bar.classList.remove('show'),2200)});
+    else if(e.shiftKey&&e.code==='KeyN')nextBtn.click();else if(e.shiftKey&&e.code==='KeyP')prevBtn.click();else if(e.code==='Escape'){cancelNext();if(pseudoFs)setPseudoFs(false)}});
+  // 手机上没有鼠标悬停：触摸时同样唤出控制栏
+  let hideT;const showBar=()=>{bar.classList.add('show');clearTimeout(hideT);hideT=setTimeout(()=>bar.classList.remove('show'),matchMedia('(hover:none)').matches?3500:2200)};
+  document.addEventListener('mousemove',showBar);document.addEventListener('touchstart',showBar,{passive:true});
   document.getElementById('exp').onclick=()=>{if(recorder){stopRec();return}startRec()};
   // 独立打开（非 iframe 嵌入）时显示返回课程站的链接
   const home=homeEl;

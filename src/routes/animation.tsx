@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { findLesson, stages } from '~/content/curriculum'
-import { PLAYER, findAnimation, formatDuration, lessonAnimationTotal, onPlayerSwitch, playerUrl, posterUrl } from '~/lib/animations'
+import { PLAYER, findAnimation, formatDuration, lessonAnimationTotal, onPlayerSwitch, playerUrl, posterUrl, pseudoFullscreenClass, usePlayerPseudoFullscreen } from '~/lib/animations'
 import { PlayIcon } from '~/components/LessonAnimation'
 
 export const Route = createFileRoute('/animation')({
@@ -41,6 +41,7 @@ function AnimationPage() {
   const [current, setCurrent] = useState('journey')
   const playerRef = useRef<HTMLDivElement>(null)
   useEffect(() => onPlayerSwitch(setCurrent), [])
+  const fs = usePlayerPseudoFullscreen()
   const playFrom = (id: string) => {
     setSrc(playerUrl(id, true))
     setCurrent(id)
@@ -74,7 +75,7 @@ function AnimationPage() {
 
       <div
         ref={playerRef}
-        className="relative mt-10 aspect-video overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[var(--shadow-float)]"
+        className={`${fs ? pseudoFullscreenClass : 'relative'} mt-10 aspect-video overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[var(--shadow-float)]`}
       >
         <iframe
           key={src}
