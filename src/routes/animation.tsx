@@ -1,6 +1,8 @@
+import { useEffect, useRef, useState } from 'react'
 import { Link, createFileRoute } from '@tanstack/react-router'
 import { findLesson, stages } from '~/content/curriculum'
-import { PLAYER, findAnimation, formatDuration, lessonAnimationTotal, posterUrl } from '~/lib/animations'
+import { PLAYER, findAnimation, formatDuration, lessonAnimationTotal, onPlayerSwitch, playerUrl, posterUrl } from '~/lib/animations'
+import { PlayIcon } from '~/components/LessonAnimation'
 
 export const Route = createFileRoute('/animation')({
   head: () => ({
@@ -30,20 +32,53 @@ const keys = [
   ['M', '静音'],
   ['V', '开关旁白'],
   ['F', '全屏'],
+  ['Shift + P / N', '上一部 · 下一部'],
 ]
 
 function AnimationPage() {
+  // 顶部播放器从总览开始，播完自动连播全部课程；点任一课的"从这里连播"即从该课接着往下看
+  const [src, setSrc] = useState(PLAYER)
+  const [current, setCurrent] = useState('journey')
+  const playerRef = useRef<HTMLDivElement>(null)
+  useEffect(() => onPlayerSwitch(setCurrent), [])
+  const playFrom = (id: string) => {
+    setSrc(playerUrl(id, true))
+    setCurrent(id)
+    playerRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+  }
+  const now = current !== 'journey' ? findAnimation(current) : undefined
+
   return (
     <main className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6">
       <p className="eyebrow">Animation · 3 分钟速览</p>
       <h1 className="mt-3 text-[40px] font-semibold leading-tight tracking-[-2px]">从第一个 Pod，到生产级集群</h1>
       <p className="mt-3 max-w-2xl text-body">
-        开始学习之前，先用 3 分钟看完整条航程：六个阶段各讲什么、会遇到哪些关键概念。含中文旁白、背景音乐与音效，建议佩戴耳机。
+        开始学习之前，先用 3 分钟看完整条航程：六个阶段各讲什么、会遇到哪些关键概念。看完会自动接着播放每一课的动画速览，一口气从第一课看到最后一课。含中文旁白、背景音乐与音效，建议佩戴耳机。
       </p>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <button
+          type="button"
+          onClick={() => playFrom('journey')}
+          className="inline-flex h-10 items-center gap-2 rounded-full bg-ink px-5 text-sm font-medium text-white hover:bg-[#383838]"
+        >
+          <PlayIcon className="size-4" /> 从总览开始连播
+        </button>
+        <button
+          type="button"
+          onClick={() => playFrom('welcome')}
+          className="inline-flex h-10 items-center gap-2 rounded-full border border-hairline bg-elevated px-5 text-sm font-medium text-ink hover:bg-canvas"
+        >
+          跳过总览，从第一课连播
+        </button>
+      </div>
 
-      <div className="relative mt-10 aspect-video overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[var(--shadow-float)]">
+      <div
+        ref={playerRef}
+        className="relative mt-10 aspect-video overflow-hidden rounded-2xl border border-hairline bg-canvas shadow-[var(--shadow-float)]"
+      >
         <iframe
-          src={PLAYER}
+          key={src}
+          src={src}
           title="K8s Journey 动画：从第一个 Pod 到生产级集群"
           allow="autoplay; fullscreen"
           allowFullScreen
@@ -60,9 +95,19 @@ function AnimationPage() {
             </li>
           ))}
         </ul>
-        <a href={PLAYER} target="_blank" rel="noreferrer" className="text-sm font-medium text-accent hover:text-accent-deep">
-          在新窗口中观看 ↗
-        </a>
+        <div className="flex flex-wrap items-center gap-4 text-sm">
+          {now && (
+            <span className="text-mute">
+              正在播放：
+              <Link to="/learn/$slug" params={{ slug: current }} className="font-medium text-body hover:text-accent">
+                {now.title}
+              </Link>
+            </span>
+          )}
+          <a href={playerUrl(current)} target="_blank" rel="noreferrer" className="font-medium text-accent hover:text-accent-deep">
+            在新窗口中观看 ↗
+          </a>
+        </div>
       </div>
 
       <section className="mt-20">
@@ -106,7 +151,7 @@ function AnimationPage() {
         <p className="eyebrow">Lessons</p>
         <h2 className="mt-3 text-[32px] font-semibold leading-10 tracking-[-1.28px]">每一课，都有一段动画速览</h2>
         <p className="mt-3 max-w-2xl text-body">
-          每段一分半左右，把一课最关键的几个概念画出来讲一遍，共约 {Math.round(lessonAnimationTotal() / 60)} 分钟。动画放在每篇课文的开头，也可以在这里挑着看。
+          每段一分半左右，把一课最关键的几个概念画出来讲一遍，共约 {Math.round(lessonAnimationTotal() / 60)} 分钟。动画放在每篇课文的开头；在这里点封面，会从那一课开始一路连播下去。
         </p>
         <div className="mt-10 space-y-12">
           {stages.map((s) => (
@@ -120,28 +165,39 @@ function AnimationPage() {
                   const a = findAnimation(l.slug)
                   if (!a) return null
                   return (
-                    <li key={l.slug}>
-                      <Link
-                        to="/learn/$slug"
-                        params={{ slug: l.slug }}
-                        className="group block overflow-hidden rounded-xl border border-hairline bg-elevated transition-shadow hover:shadow-[var(--shadow-float)]"
+                    <li key={l.slug} className="group overflow-hidden rounded-xl border border-hairline bg-elevated transition-shadow hover:shadow-[var(--shadow-float)]">
+                      <button
+                        type="button"
+                        onClick={() => playFrom(l.slug)}
+                        aria-label={`从「${l.title}」开始连播`}
+                        className="relative block aspect-video w-full cursor-pointer overflow-hidden border-b border-hairline bg-canvas"
                       >
-                        <div className="relative aspect-video overflow-hidden border-b border-hairline bg-canvas">
-                          <img
-                            src={posterUrl(l.slug)}
-                            alt=""
-                            loading="lazy"
-                            className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-                          />
-                          <span className="absolute bottom-2 right-2 rounded-md bg-ink/80 px-1.5 py-0.5 font-mono text-[11px] text-white">
-                            {formatDuration(a.duration)}
-                          </span>
-                        </div>
-                        <div className="p-4">
-                          <p className="font-medium text-ink group-hover:text-accent transition-colors">{l.title}</p>
-                          <p className="mt-1 line-clamp-1 text-sm text-mute">{a.scenes.slice(1, -1).join(' · ')}</p>
-                        </div>
-                      </Link>
+                        <img
+                          src={posterUrl(l.slug)}
+                          alt=""
+                          loading="lazy"
+                          className="size-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                        />
+                        <span className="absolute left-1/2 top-1/2 inline-flex size-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-ink text-white opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+                          <PlayIcon className="ml-0.5 size-4" />
+                        </span>
+                        {current === l.slug && (
+                          <span className="absolute left-2 top-2 rounded-md bg-accent px-1.5 py-0.5 text-[11px] font-medium text-white">正在播放</span>
+                        )}
+                        <span className="absolute bottom-2 right-2 rounded-md bg-ink/80 px-1.5 py-0.5 font-mono text-[11px] text-white">
+                          {formatDuration(a.duration)}
+                        </span>
+                      </button>
+                      <div className="p-4">
+                        <Link
+                          to="/learn/$slug"
+                          params={{ slug: l.slug }}
+                          className="font-medium text-ink hover:text-accent transition-colors"
+                        >
+                          {l.title}
+                        </Link>
+                        <p className="mt-1 line-clamp-1 text-sm text-mute">{a.scenes.slice(1, -1).join(' · ')}</p>
+                      </div>
                     </li>
                   )
                 })}

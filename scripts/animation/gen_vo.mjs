@@ -113,6 +113,10 @@ export function writeManifest() {
     m[id] = { duration: Math.round(total), scenes: scenes.map(s => s.name), ...(def.meta ? { title: def.meta.title } : {}) }
   }
   fs.writeFileSync(MANIFEST, JSON.stringify(m, null, 2) + '\n')
+  // 连播顺序：总览动画在前，其后按阶段、课序排列；播放器据此决定"下一部"
+  const list = Object.keys(m).map(id => ({ id, ...load(id).def.meta })).sort((a, b) => (a.stage ?? -1) - (b.stage ?? -1) || (a.lesson ?? 0) - (b.lesson ?? 0))
+    .map(({ id, title, stage, lesson }) => ({ id, title: title || 'K8s Journey 总览', duration: m[id].duration, ...(stage != null ? { stage, lesson } : {}) }))
+  fs.writeFileSync(path.join(DIR, 'playlist.json'), JSON.stringify(list) + '\n')
   console.log(`已写入 ${path.relative(ROOT, MANIFEST)}（${Object.keys(m).length} 个动画）`)
 }
 

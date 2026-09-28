@@ -19,3 +19,12 @@ export const formatDuration = (s: number) => `${Math.floor(s / 60)}:${String(Mat
 
 export const lessonAnimationTotal = () =>
   Object.entries(animations).reduce((n, [id, a]) => (id === 'journey' ? n : n + a.duration), 0)
+
+// 播放器连播切换到另一部时会向父页面发 {type:'k8s-anim', id}
+export function onPlayerSwitch(cb: (id: string) => void) {
+  const h = (e: MessageEvent) => {
+    if (e.origin === location.origin && e.data?.type === 'k8s-anim' && typeof e.data.id === 'string') cb(e.data.id)
+  }
+  window.addEventListener('message', h)
+  return () => window.removeEventListener('message', h)
+}
