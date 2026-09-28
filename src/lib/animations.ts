@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 // 动画清单由 scripts/animation/gen_vo.mjs 生成：哪些课有动画、各自时长与场景
 import manifest from '~/content/animations.gen.json'
 
@@ -28,3 +29,27 @@ export function onPlayerSwitch(cb: (id: string) => void) {
   window.addEventListener('message', h)
   return () => window.removeEventListener('message', h)
 }
+
+// iPhone Safari 等不支持 Fullscreen API 时，播放器会发 {type:'k8s-anim-fs', on} 请求父页面把画框铺满视口（网页全屏）
+export function usePlayerPseudoFullscreen() {
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    const h = (e: MessageEvent) => {
+      if (e.origin === location.origin && e.data?.type === 'k8s-anim-fs') setOn(!!e.data.on)
+    }
+    window.addEventListener('message', h)
+    return () => window.removeEventListener('message', h)
+  }, [])
+  useEffect(() => {
+    if (!on) return
+    const prev = document.documentElement.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.documentElement.style.overflow = prev
+    }
+  }, [on])
+  return on
+}
+
+// 网页全屏时画框的样式：固定铺满视口（含刘海安全区），盖住导航栏
+export const pseudoFullscreenClass = 'fixed inset-0 z-[100] !mt-0 !aspect-auto !rounded-none !border-0 h-dvh w-screen'

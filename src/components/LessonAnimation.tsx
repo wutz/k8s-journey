@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { findAnimation, formatDuration, onPlayerSwitch, playerUrl, posterUrl } from '~/lib/animations'
+import { findAnimation, formatDuration, onPlayerSwitch, playerUrl, posterUrl, pseudoFullscreenClass, usePlayerPseudoFullscreen } from '~/lib/animations'
 
 export function PlayIcon({ className }: { className?: string }) {
   return (
@@ -17,13 +17,14 @@ export function LessonAnimation({ slug, title }: { slug: string; title: string }
   // 播完会自动连播下一课的动画；此时在画框下方提示正在播放哪一课
   const [playingId, setPlayingId] = useState(slug)
   useEffect(() => onPlayerSwitch(setPlayingId), [])
+  const fs = usePlayerPseudoFullscreen()
   if (!anim) return null
   const other = playingId !== slug ? findAnimation(playingId) : undefined
   const duration = formatDuration(anim.duration)
 
   return (
     <section aria-label="动画速览" className="mt-8 max-w-[72ch]">
-      <div className="relative aspect-video overflow-hidden rounded-xl border border-hairline bg-canvas shadow-[var(--shadow-float)]">
+      <div className={`${fs ? pseudoFullscreenClass : 'relative'} aspect-video overflow-hidden rounded-xl border border-hairline bg-canvas shadow-[var(--shadow-float)]`}>
         {open ? (
           <iframe
             src={playerUrl(slug, true)}

@@ -566,7 +566,23 @@ for(let i=0;i<6;i++)SFX['ding'+i]=(w,o)=>{const m=[72,74,76,79,81,84][i];osc('si
    播放控制 / 时钟同步 / UI（boot 时才接触 DOM）
    ============================================================ */
 let playing=false,T0=0,anchorA=0,anchorP=0,nextStep=0,nextCue=0,nextVo=0,muted=false,schedTimer=null,recorder=null;
-let cv,ppBtn,fill,timeEl,track,bar,flashEl,flashReady=false,muteBtn,voBtn,startEl;
+/* 控制栏图标（24×24 描边风格），按钮用 setIcon 切换 */
+const ICONS={
+  play:'<path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/>',
+  pause:'<rect x="6.5" y="5" width="3.5" height="14" rx="1" fill="currentColor"/><rect x="14" y="5" width="3.5" height="14" rx="1" fill="currentColor"/>',
+  prev:'<path d="M18 6v12l-8.5-6z" fill="currentColor"/><rect x="6" y="6" width="2" height="12" rx="1" fill="currentColor"/>',
+  next:'<path d="M6 6v12l8.5-6z" fill="currentColor"/><rect x="16" y="6" width="2" height="12" rx="1" fill="currentColor"/>',
+  auto:'<path d="M4 12a7 7 0 0 1 12-4.9L18 9M20 12a7 7 0 0 1-12 4.9L6 15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M18 4.5V9h-4.5M6 19.5V15h4.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  vo:'<rect x="9" y="3.5" width="6" height="11" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  vol:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 9a4 4 0 0 1 0 6M18 6.5a7.5 7.5 0 0 1 0 11" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  mute:'<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+  rec:'<circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="3.5" fill="#e5383b"/>',
+  stop:'<rect x="6.5" y="6.5" width="11" height="11" rx="2" fill="#e5383b"/>',
+  fs:'<path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+  fsExit:'<path d="M9 4v5H4M20 9h-5V4M15 20v-5h5M4 15h5v5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+};
+function setIcon(b,name,label){b.innerHTML=`<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[name]}</svg>`;if(label){b.setAttribute('aria-label',label);b.title=label}}
+let chNameEl,cv,ppBtn,fill,timeEl,track,bar,flashEl,flashReady=false,muteBtn,voBtn,startEl;
 // anchorA 对应 T0：now() = T0 + (AC.currentTime - anchorA)
 function now(){if(!playing)return T0;return AC?T0+(AC.currentTime-anchorA):T0+(performance.now()-anchorP)/1000}
 function play(){
@@ -577,9 +593,9 @@ function play(){
     nextVo=VO.findIndex(v=>v.t+v.d>T0+.3);if(nextVo<0)nextVo=VO.length;
     schedTimer=setInterval(schedule,25);schedule();}
   else anchorP=performance.now();
-  ppBtn.textContent='❚❚';flashState();
+  setIcon(ppBtn,'pause','暂停（空格）');flashState();
 }
-function pause(){if(!playing)return;T0=now();playing=false;clearInterval(schedTimer);if(session){endSession(session);session=null}ppBtn.textContent='▶';flashState()}
+function pause(){if(!playing)return;T0=now();playing=false;clearInterval(schedTimer);if(session){endSession(session);session=null}setIcon(ppBtn,'play','播放（空格）');flashState()}
 function seek(t){const was=playing;pause();T0=clamp(t,0,TOTAL);if(was)play();else frame()}
 function schedule(){
   if(!playing||!session)return;
@@ -600,13 +616,14 @@ function frame(){
   fill.style.width=(T/TOTAL*100)+'%';
   timeEl.textContent=`${fmt(T)} / ${fmt(TOTAL)}`;
   const si=sceneAt(Math.min(T,TOTAL-.01));document.querySelectorAll('.ch').forEach((e,i)=>e.classList.toggle('on',i===si));
+  if(chNameEl&&SCENES[si]&&chNameEl.textContent!==SCENES[si].name)chNameEl.textContent=SCENES[si].name;
 }
 function loop(){frame();requestAnimationFrame(loop)}
 const fmt=s=>`${Math.floor(s/60)}:${String(Math.floor(s%60)).padStart(2,'0')}`;
 function flashState(){if(!flashReady)return;flashEl.querySelector('svg').innerHTML=playing?'<path d="M8 5v14l11-7z" fill="#171717"/>':'<rect x="6" y="5" width="4" height="14" rx="1" fill="#171717"/><rect x="14" y="5" width="4" height="14" rx="1" fill="#171717"/>';
   flashEl.classList.remove('go');void flashEl.offsetWidth;flashEl.classList.add('go')}
-function toggleMute(){muted=!muted;if(session)sessionLevel(session,muted?0:1,.03);muteBtn.textContent=muted?'🔇 静音':'🔊 声音'}
-function toggleVO(){voOn=!voOn;if(session){session.vo.gain.setTargetAtTime(voOn?.95:0,AC.currentTime,.05);if(!voOn)session.mus.gain.setTargetAtTime(.5,AC.currentTime,.2)}voBtn.textContent=voOn?'🎙 旁白':'🎙 旁白关';voBtn.style.opacity=voOn?1:.55}
+function toggleMute(){muted=!muted;if(session)sessionLevel(session,muted?0:1,.03);setIcon(muteBtn,muted?'mute':'vol',muted?'取消静音（M）':'静音（M）')}
+function toggleVO(){voOn=!voOn;if(session){session.vo.gain.setTargetAtTime(voOn?.95:0,AC.currentTime,.05);if(!voOn)session.mus.gain.setTargetAtTime(.5,AC.currentTime,.2)}setIcon(voBtn,'vo',voOn?'关闭旁白（V）':'打开旁白（V）');voBtn.classList.toggle('off',!voOn)}
 
 /* 导出视频：canvas 画面 + 混音输出 → MediaRecorder */
 function startRec(){
@@ -617,9 +634,9 @@ function startRec(){
   const stream=new MediaStream([...cv.captureStream(60).getVideoTracks(),...recDest.stream.getAudioTracks()]);
   const chunks=[];recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:12e6,audioBitsPerSecond:192e3});
   recorder.ondataavailable=e=>e.data.size&&chunks.push(e.data);
-  recorder.onstop=()=>{const blob=new Blob(chunks,{type:mime});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`k8s-journey-${ANIM_DEF.id}.${mime.includes('mp4')?'mp4':'webm'}`;a.click();document.getElementById('rec').style.display='none';recorder=null};
+  recorder.onstop=()=>{const blob=new Blob(chunks,{type:mime});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`k8s-journey-${ANIM_DEF.id}.${mime.includes('mp4')?'mp4':'webm'}`;a.click();document.getElementById('rec').style.display='none';setIcon(document.getElementById('exp'),'rec','导出视频');recorder=null};
   if(muted)toggleMute();
-  seek(0);pause();T0=0;recorder.start(500);document.getElementById('rec').style.display='block';setTimeout(play,300);
+  seek(0);pause();T0=0;recorder.start(500);document.getElementById('rec').style.display='block';setIcon(document.getElementById('exp'),'stop','停止录制并下载');setTimeout(play,300);
 }
 function stopRec(){if(recorder&&recorder.state!=='inactive')recorder.stop()}
 
@@ -666,7 +683,7 @@ async function switchTo(id,{autoplay=true}={}){
   if(autoplay||was)play();else frame();
 }
 function toggleAuto(){autoNext=!autoNext;try{localStorage.setItem('k8s-anim-autonext',autoNext?'1':'0')}catch(e){}
-  autoBtn.textContent=autoNext?'⟳ 连播':'⟳ 连播关';autoBtn.style.opacity=autoNext?1:.55;if(!autoNext)cancelNext()}
+  setIcon(autoBtn,'auto',autoNext?'连播已开：播完自动接下一部':'连播已关');autoBtn.classList.toggle('off',!autoNext);if(!autoNext)cancelNext()}
 
 // 与当前动画相关的界面：开始页文案、主题色、章节按钮与进度刻度、上一部 / 下一部
 function applyUI(){
@@ -684,10 +701,34 @@ function applyUI(){
   SCENES.forEach(s=>{const b=document.createElement('button');b.className='ch';b.textContent=s.name;b.onclick=()=>seek(s.start+.01);chWrap.appendChild(b);
     if(s.start>0){const k=document.createElement('div');k.className='tick';k.style.left=(s.start/TOTAL*100)+'%';track.appendChild(k)}});
   const pv=neighbor(-1),nx=neighbor(1);
-  prevBtn.disabled=!pv;prevBtn.title=pv?`上一部：${pv.title}（Shift+P）`:'';
-  nextBtn.disabled=!nx;nextBtn.title=nx?`下一部：${nx.title}（Shift+N）`:'';
+  prevBtn.disabled=!pv;prevBtn.title=pv?`上一部：${pv.title}（Shift+P）`:'没有上一部';prevBtn.setAttribute('aria-label',prevBtn.title);
+  nextBtn.disabled=!nx;nextBtn.title=nx?`下一部：${nx.title}（Shift+N）`:'没有下一部';nextBtn.setAttribute('aria-label',nextBtn.title);
   const i=listPos();document.getElementById('listPos').textContent=i>=0?`${i+1} / ${PLAYLIST.length}`:'';
   if(M)homeEl.href=`/learn/${D.id}`,homeEl.textContent='← 回到课文';else homeEl.href='/',homeEl.textContent='← K8s Journey 课程';
+}
+
+/* ---------- 全屏：iPhone Safari 不支持对普通元素调用 Fullscreen API（iPad / 旧版 Safari 只有 webkit 前缀），
+   这时退回"网页全屏"——嵌入时通知父页面把画框铺满视口；Android 等支持的浏览器全屏后尽量锁定横屏 ---------- */
+let pseudoFs=false,fsBtn;
+const fsElement=()=>document.fullscreenElement||document.webkitFullscreenElement||null;
+const fsSupported=()=>!!(document.fullscreenEnabled||document.webkitFullscreenEnabled);
+const embedded=()=>window.parent!==window;
+function updFsBtn(){const on=fsElement()||pseudoFs;setIcon(fsBtn,on?'fsExit':'fs',on?'退出全屏（F）':'全屏（F）')}
+function setPseudoFs(on){pseudoFs=on;
+  try{embedded()&&window.parent.postMessage({type:'k8s-anim-fs',on},'*')}catch(e){}updFsBtn()}
+function toggleFs(){
+  if(pseudoFs)return setPseudoFs(false);
+  if(fsElement()){const ex=document.exitFullscreen||document.webkitExitFullscreen;ex&&ex.call(document);return}
+  if(!fsSupported()){if(embedded())setPseudoFs(true);return}
+  const el=document.documentElement,req=el.requestFullscreen||el.webkitRequestFullscreen;
+  Promise.resolve(req.call(el)).then(()=>{try{screen.orientation.lock('landscape').catch(()=>{})}catch(e){}},()=>{if(embedded())setPseudoFs(true)});
+}
+function setupFullscreen(){
+  fsBtn=document.getElementById('fs');fsBtn.onclick=toggleFs;
+  // 独立打开且浏览器不支持全屏（如 iPhone）时，页面本身已铺满视口，隐藏按钮
+  if(!fsSupported()&&!embedded())fsBtn.style.display='none';
+  const onChange=()=>{if(!fsElement())try{screen.orientation.unlock()}catch(e){}updFsBtn()};
+  document.addEventListener('fullscreenchange',onChange);document.addEventListener('webkitfullscreenchange',onChange);
 }
 
 async function boot(id){
@@ -699,7 +740,7 @@ async function boot(id){
 
   ppBtn=document.getElementById('pp');fill=document.getElementById('fill');timeEl=document.getElementById('time');track=document.getElementById('track');bar=document.getElementById('bar');
   prevBtn=document.getElementById('prev');nextBtn=document.getElementById('next');autoBtn=document.getElementById('auto');nextEl=document.getElementById('upnext');
-  homeEl=document.getElementById('home');
+  homeEl=document.getElementById('home');chNameEl=document.getElementById('chName');
   prevBtn.onclick=()=>{const p=neighbor(-1);if(p)switchTo(p.id)};nextBtn.onclick=()=>{const n=neighbor(1);if(n)switchTo(n.id)};
   autoBtn.onclick=toggleAuto;autoNext=!autoNext;toggleAuto();
   document.getElementById('nextNow').onclick=()=>{const n=neighbor(1);if(n)switchTo(n.id)};
@@ -712,18 +753,19 @@ async function boot(id){
   // 点击画面：暂停 / 继续，并在中央短暂显示状态图标
   flashEl=document.getElementById('flash');
   cv.addEventListener('click',()=>{if(!AC||recorder)return;flashReady=true;playing?pause():play()});
-  document.getElementById('back').onclick=()=>seek(now()-5);
-  document.getElementById('fwd').onclick=()=>seek(now()+5);
-  muteBtn=document.getElementById('mute');muteBtn.onclick=toggleMute;
-  voBtn=document.getElementById('voBtn');voBtn.onclick=toggleVO;
-  document.getElementById('fs').onclick=()=>document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();
+  muteBtn=document.getElementById('mute');muteBtn.onclick=toggleMute;setIcon(muteBtn,'vol','静音（M）');
+  voBtn=document.getElementById('voBtn');voBtn.onclick=toggleVO;setIcon(voBtn,'vo','关闭旁白（V）');
+  setIcon(ppBtn,'play','播放（空格）');setIcon(prevBtn,'prev');setIcon(nextBtn,'next');
+  setupFullscreen();updFsBtn();
   startEl=document.getElementById('start');
   document.addEventListener('keydown',e=>{if(startEl.style.display!=='none'&&!AC)return;
     if(e.code==='Space'){e.preventDefault();flashReady=true;playing?pause():play()}else if(e.code==='ArrowLeft')seek(now()-5);else if(e.code==='ArrowRight')seek(now()+5);
     else if(e.key==='m'||e.key==='M')toggleMute();else if(e.key==='v'||e.key==='V')toggleVO();else if(e.key==='f'||e.key==='F')document.getElementById('fs').click();
-    else if(e.shiftKey&&e.code==='KeyN')nextBtn.click();else if(e.shiftKey&&e.code==='KeyP')prevBtn.click();else if(e.code==='Escape')cancelNext()});
-  let hideT;document.addEventListener('mousemove',()=>{bar.classList.add('show');clearTimeout(hideT);hideT=setTimeout(()=>bar.classList.remove('show'),2200)});
-  document.getElementById('exp').onclick=()=>{if(recorder){stopRec();return}startRec()};
+    else if(e.shiftKey&&e.code==='KeyN')nextBtn.click();else if(e.shiftKey&&e.code==='KeyP')prevBtn.click();else if(e.code==='Escape'){cancelNext();if(pseudoFs)setPseudoFs(false)}});
+  // 手机上没有鼠标悬停：触摸时同样唤出控制栏
+  let hideT;const showBar=()=>{bar.classList.add('show');clearTimeout(hideT);hideT=setTimeout(()=>bar.classList.remove('show'),matchMedia('(hover:none)').matches?3500:2200)};
+  document.addEventListener('mousemove',showBar);document.addEventListener('touchstart',showBar,{passive:true});
+  const expBtn=document.getElementById('exp');setIcon(expBtn,'rec','导出视频');expBtn.onclick=()=>{if(recorder){stopRec();return}startRec()};
   // 独立打开（非 iframe 嵌入）时显示返回课程站的链接
   const home=homeEl;
   if(window.top===window.self){if(location.protocol!=='file:')home.style.display='flex'}else document.getElementById('goRec').style.display='none';
