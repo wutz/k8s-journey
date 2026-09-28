@@ -58,6 +58,7 @@ pnpm run deploy
 - `public/animation/<id>/vo.json`、`vo/*.mp3`：旁白音频，由脚本生成
 - `public/animation/<id>/poster.jpg`：封面图，首页、课文页和分享卡片使用
 - `src/content/animations.gen.json`：动画清单（时长、场景名），站点据此决定哪些课显示动画
+- `public/animation/playlist.json`：连播顺序（总览在前，其后按阶段、课序），同样由 gen_vo.mjs 生成
 
 脚本（需要 [uv](https://docs.astral.sh/uv/)、macOS 的 `afinfo` 和本机 Chrome）：
 
