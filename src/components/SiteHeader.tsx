@@ -20,6 +20,9 @@ export function SiteHeader() {
             <a href="https://kubernetes.io/zh-cn/docs/home/" target="_blank" rel="noreferrer" className={navLink}>
               官方文档
             </a>
+            <a href="https://wutz.dev/" target="_blank" rel="noreferrer" className={navLink}>
+              wutz.dev ↗
+            </a>
           </nav>
         </div>
         <Link

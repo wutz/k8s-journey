@@ -35,7 +35,7 @@ pnpm wrangler login
 pnpm run deploy
 ```
 
-`wrangler.jsonc` 已开启 `workers_dev` 与 `preview_urls`，部署后可通过 `*.workers.dev` 访问，每个版本也有独立预览地址。
+`wrangler.jsonc` 已开启 `workers_dev` 与 `preview_urls`，正式地址是 https://k8s-journey.wutz.dev/（`routes` 里的自定义域），也可通过 `*.workers.dev` 访问，每个版本也有独立预览地址。
 
 ## 写课文
 

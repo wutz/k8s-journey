@@ -30,7 +30,11 @@ export function SiteFooter() {
       </div>
       <div className="border-t border-hairline">
         <p className="mx-auto max-w-[1400px] px-4 py-5 text-xs text-faint sm:px-6">
-          Kubernetes® 是 The Linux Foundation 的注册商标。本站为独立学习资料，与 CNCF 无隶属关系。
+          Kubernetes® 是 The Linux Foundation 的注册商标。本站为独立学习资料，与 CNCF 无隶属关系。更多教程与工具见{' '}
+          <a href="https://wutz.dev/" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+            wutz.dev
+          </a>
+          。
         </p>
       </div>
     </footer>
